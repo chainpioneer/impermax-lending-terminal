@@ -5,7 +5,6 @@ import {isAddress} from "web3-validator";
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
-import InputNumber from 'primevue/inputnumber'
 import Image from 'primevue/image';
 import ProgressSpinner from 'primevue/progressspinner';
 import {ASSETS, Chains} from "../constants/constants";
@@ -178,12 +177,9 @@ function toUSDCurrency(n: number | string): string {
                   <p class="m-0">
                     APR: {{data.currentAPR}}% -> {{data.maxAPR}}%
                   </p>
-                  <div class="card flex flex-wrap gap-4">
-                    <div class="flex-auto">
-                        <label for="idle-total" class="font-bold block mb-2"> Idle </label>
-                        <InputNumber v-model="data.idleUsd" disabled="true" inputId="idle-total" mode="currency" currency="USD" locale="en-US" />
-                    </div>
-                  </div>
+                  <p class="m-0">
+                    Idle: {{ toUSDCurrency(data.idleUsd) }}
+                  </p>
             </template>
           </Card>
         </template>

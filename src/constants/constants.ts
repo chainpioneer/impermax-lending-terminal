@@ -38,7 +38,7 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0xbebc60ca78147c04ede280f7f46777e8cf139924'),
       web3Inst.utils.toChecksumAddress('0xe43872854ce04be138a81a383901c8d6f55c5b20'),
     ],
-    rpcUrls: ['https://base.rpc.subquery.network/public'],
+    rpcUrls: ['https://mainnet.base.org', 'https://1rpc.io/base', 'https://base.meowrpc.com'],
     chainId: 8453,
     assets: {
       '0x4200000000000000000000000000000000000006': ASSETS.ETH,
@@ -82,7 +82,7 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0x382B611B67169Da69D5073746b4EF94cd45Ef620'),
       web3Inst.utils.toChecksumAddress('0x38581cD06888569e157ae68d8DF64bD4f48B9eb1'),
     ],
-    rpcUrls: ['https://rpc.scroll.io'],
+    rpcUrls: ['https://rpc.scroll.io', 'https://1rpc.io/scroll', 'https://rpc.ankr.com/scroll', ],
     chainId: 534352,
     assets: {
       '0x5300000000000000000000000000000000000004': ASSETS.ETH,
@@ -105,7 +105,7 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0x7a3c737368d9ab8f00e19fe58cdad7aed586cd49'),
       web3Inst.utils.toChecksumAddress('0xab0de337fe170bb8c8d88664641402b1da410cd7'),
     ],
-    rpcUrls: ['https://rpcapi.fantom.network', 'https://rpc2.fantom.network', 'https://rpc.ftm.tools'],
+    rpcUrls: ['https://fantom-json-rpc.stakely.io', 'https://fantom-mainnet.public.blastapi.io', 'https://endpoints.omniatech.io/v1/fantom/mainnet/public', 'https://fantom.drpc.org', 'https://1rpc.io/ftm', 'https://rpc.ftm.tools', 'https://rpc.fantom.network', 'https://rpc.ankr.com/fantom', 'https://rpcapi.fantom.network', 'https://rpc2.fantom.network'],
     chainId: 250,
     assets: {
       '0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83': ASSETS.FTM,

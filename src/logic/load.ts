@@ -328,7 +328,6 @@ export default async function load(users: string[]) {
   await Promise.all(chains.map(callChain))
 
   for (const a in ASSETS) {
-    const price = await getAssetPrice(a as ASSETS)
     const div = a === ASSETS.USDC ? 10 ** 6 : 10 ** 18
 
     for (const c in Chains) {
@@ -344,7 +343,6 @@ export default async function load(users: string[]) {
         aca.newUserSuppliedUsd = Number((aca.newUserSupplied * await getAssetPrice(a as ASSETS)).toFixed(2))
         if (aca.newUserSuppliedUsd + idleBalancesByChain[c][a].idleUsd < 1) {
           delete cumulativeValuesByChains[c][a]
-          continue
         }
       }
     }
