@@ -78,6 +78,42 @@ export async function callWithTimeout(
   return result as any[]
 }
 
+export async function tryWithTimeout(
+  chain: Chains,
+  requests: Call[],
+  blockNumber?: number,
+  timeout = 15_000,
+  from = `0x${'0'.repeat(40)}`,
+): Promise<any[]> {
+  let errCount = 0
+  let result
+  while (!result) {
+    try {
+      result = await Promise.race([
+        ETH_CALL_PROVIDERS[chain][lastProviderIndex[chain]].tryAll(requests, {
+          blockTag: blockNumber,
+          from,
+        }),
+        sleep(timeout),
+      ])
+    } catch (e) {
+      console.log(String(e))
+      errCount++
+      console.log('eth_call failed', errCount)
+      if (errCount > maxErrCount[chain]) {
+        console.log(requests)
+        throw new Error(`eth_call failed ${maxErrCount} times`)
+      }
+    }
+    if (!result) {
+      switchProvider(chain)
+      return tryWithTimeout(chain, requests, blockNumber, timeout)
+    }
+    await sleep(1_000 * errCount)
+  }
+  return result as any[]
+}
+
 export async function web3EthCall(chain: Chains, method: string, params: any[], timeout?: number) {
   const providerCount = WEB3_PROVIDERS[chain].length
   for (let i = 0; i < providerCount * 2; i++) {

@@ -4,7 +4,7 @@ import borrowableAbi from '../../abi/borrowable.json' assert {type: 'json'}
 import vaultAbi from '../../abi/vault.json' assert {type: 'json'}
 import collateralAbi from '../../abi/collateral.json' assert {type: 'json'}
 import {ASSETS, CHAIN_CONF, Chains, getAssetPrice} from '../constants/constants'
-import {callWithTimeout, getCurrentEthCallProvider, web3EthCall} from '../provider/provider'
+import {callWithTimeout, getCurrentEthCallProvider, tryWithTimeout, web3EthCall} from '../provider/provider'
 import ONE from '../utils/ONE'
 
 type AssetStats = {
@@ -131,7 +131,7 @@ export default async function load(users: string[]) {
         calls3.push(borrowable2.getBlockTimestamp())
       }
     })
-    const oppositeUnderlyingsAndStableFlags = await callWithTimeout(chain, calls3, pastBlockNumber, undefined, '0xcA11bde05977b3631167028862bE2a173976CA11')
+    const oppositeUnderlyingsAndStableFlags = await tryWithTimeout(chain, calls3, pastBlockNumber, undefined, '0xcA11bde05977b3631167028862bE2a173976CA11')
 
     const pastVaultStateByBorrowable: { [b: string]: { timestamp: number, exchangeRate: bigint } } = {}
 
@@ -146,10 +146,9 @@ export default async function load(users: string[]) {
           break
         case 1:
           pastVaultStateByBorrowable[conf.borrowables[Math.floor(i / 5)]] = { timestamp: Number(val), exchangeRate: oppositeUnderlyingsAndStableFlags[i + 3] }
-              break
+          break
         case 2:
           stableByBor[conf.borrowables[Math.floor(i / 5)]] = val
-            break
           break
         default:
           break
@@ -166,7 +165,7 @@ export default async function load(users: string[]) {
       })
     })
 
-    const dataFromCall4 = await callWithTimeout(chain, calls4, blockNumber, undefined, '0xcA11bde05977b3631167028862bE2a173976CA11')
+    const dataFromCall4 = await tryWithTimeout(chain, calls4, blockNumber, undefined, '0xcA11bde05977b3631167028862bE2a173976CA11')
 
     const idleBalances = dataFromCall4.slice(conf.borrowables.length * 3)
 
