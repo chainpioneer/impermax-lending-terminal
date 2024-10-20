@@ -635,13 +635,23 @@ export default async function load(users: string[]) {
 
   const maxAPR = ((maxTotalEarnings * 36500) / totalDeposited).toFixed(2)
 
+  const poolChains: { [chain: string]: true } = {}
+  const poolAssets: { [chain: string]: true } = {}
+
   const goodPools = pools.filter(
-      (x) =>
-          x.suppliedUsd > 1 ||
-          (
-              (x.aprNew > 8 && x.availableToDepositUsd > 1000) ||
-              (x.aprNew > 15 && x.tvlUsd > 100_000)
-          )).sort((a, b) => b.aprNew - a.aprNew)
+      (x) => {
+        const good = x.suppliedUsd > 1 ||
+        (
+            (x.aprNew > 8 && x.availableToDepositUsd > 1000) ||
+            (x.aprNew > 15 && x.tvlUsd > 100_000)
+        )
+        if (good) {
+          poolChains[x.chain] = true
+          poolAssets[x.asset] = true
+        }
+        return good
+      }
+  ).sort((a, b) => b.aprNew - a.aprNew)
 
   const currentAPR = ((oldTotalEarnings * 36500) / totalDeposited).toFixed(2)
 
@@ -671,6 +681,8 @@ export default async function load(users: string[]) {
     maxAPR,
     currentAPR,
     chainAggregatedStats,
+    poolAssets: Object.keys(poolAssets),
+    poolChains: Object.keys(poolChains),
     usd: usd.toFixed(2),
     users,
   }
