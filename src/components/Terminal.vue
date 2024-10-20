@@ -7,6 +7,8 @@ import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Image from 'primevue/image';
 import ProgressSpinner from 'primevue/progressspinner';
+import Popover from 'primevue/popover';
+import Panel from 'primevue/panel';
 import {ASSETS, Chains} from "../constants/constants";
 
 defineProps<{ msg: string }>()
@@ -17,6 +19,53 @@ const addresses = ref(localStorage.getItem('userStr') || '')
 const data: any = ref(undefined)
 const wallet = ref('')
 const chain = ref('')
+
+const idleByUser = ref();
+const idleByAssetByUser = ref();
+const idleByChainByUser = ref();
+const idleByChainByAssetByUser = ref({});
+
+const suppliedByUser = ref();
+const suppliedByAssetByUser = ref();
+const suppliedByChainByUser = ref();
+const suppliedByChainByAssetByUser = ref({});
+const suppliedByChainByAssetByBorrowableByUser = ref({});
+
+const showIdleByUser = (event: any) => {
+  (idleByUser as any).value.toggle(event);
+}
+
+const showIdleByAssetByUser = (index: number) => (event: any) => {
+  (idleByAssetByUser as any).value[index].toggle(event);
+}
+
+const showIdleByChainByUser = (index: number) => (event: any) => {
+  (idleByChainByUser as any).value[index].toggle(event);
+}
+
+const showIdleByChainByAssetByUser = (chain: number, asset: number) => (event: any) => {
+  (idleByChainByAssetByUser as any).value[chain + asset].toggle(event);
+}
+
+const showDepositByUser = (event: any) => {
+  (suppliedByUser as any).value.toggle(event);
+}
+
+const showDepositByAssetByUser = (index: number) => (event: any) => {
+  (suppliedByAssetByUser as any).value[index].toggle(event);
+}
+
+const showDepositByChainByUser = (index: number) => (event: any) => {
+  (suppliedByChainByUser as any).value[index].toggle(event);
+}
+
+const showDepositByChainByAssetByUser = (chain: number, asset: number) => (event: any) => {
+  (suppliedByChainByAssetByUser as any).value[chain + asset].toggle(event);
+}
+
+const showDepositByChainByAssetByBorrowableByUser = (chain: string, borrowable: string) => (event: any) => {
+  (suppliedByChainByAssetByBorrowableByUser as any).value[chain + borrowable].toggle(event);
+}
 
 const storage = () => localStorage
 
@@ -52,8 +101,10 @@ function assetImgSrc(asset: number | string) {
       return 'https://whattofarm.io/assets/dex/tokens/200/fbomb-bomb-logo.webp'
     case ASSETS.OP:
       return chainImgSrc(Chains.OP)
+    case ASSETS.IBEX:
+      return 'https://icons.llama.fi/impermax-finance.png'
     case ASSETS.wstETH:
-      return 'https://s2.coinmarketcap.com/static/img/coins/200x200/12409.png'
+      return 'https://cryptologos.cc/logos/steth-steth-logo.png'
     case ASSETS.USDC:
       return 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png'
     case ASSETS.ETH:
@@ -63,11 +114,11 @@ function assetImgSrc(asset: number | string) {
   }
 }
 
-function protocolImgSrc(platform: string) {
+function platformImgSrc(platform: string) {
   if (platform === 'Impermax') {
-    return 'https://icons.llama.fi/impermax-finance.png'
+    return assetImgSrc(ASSETS.IBEX)
   } else if (platform === 'Tarot') {
-    return 'https://assets.coingecko.com/coins/images/31800/large/TAROT.jpg'
+    return 'https://www.tarot.to/favicon.ico'
   }
   return 'https://static.thenounproject.com/png/1166209-200.png'
 }
@@ -118,7 +169,7 @@ function toUSDCurrency(n: number | string): string {
   let s
   if (pointIndex === -1) {
     s = ''
-    lastIndex = n.length - 1
+    lastIndex = n.length
   } else {
     lastIndex = pointIndex
     s = n.substring(pointIndex)
@@ -154,6 +205,7 @@ function toUSDCurrency(n: number | string): string {
             fetchingData = true
             storage().setItem('userStr', addresses)
             data = await load(extractAddresses(addresses))
+            // Object.keys(_data.idleBalancesByAssetByUser).forEach(createRefForAsset)
             fetchingData = false
           } )"></Button>
         </template>
@@ -168,18 +220,32 @@ function toUSDCurrency(n: number | string): string {
         <template v-if="data">
           <Card class="card-chain">
             <template #content>
-                  <p class="m-0">
-                    Total deposited: {{toUSDCurrency(data.totalDeposited)}}
-                  </p>
-                  <p class="m-0">
-                    Daily earnings: {{ toUSDCurrency(data.oldTotalEarnings) }} -> {{ toUSDCurrency(data.maxTotalEarnings) }}
-                  </p>
-                  <p class="m-0">
-                    APR: {{data.currentAPR}}% -> {{data.maxAPR}}%
-                  </p>
-                  <p class="m-0">
-                    Idle: {{ toUSDCurrency(data.idleUsd) }}
-                  </p>
+              <p class="m-0">
+                Total deposited: {{toUSDCurrency(data.totalDeposited)}} <label v-if="data.users.length > 1" @click="showDepositByUser">ℹ️</label>
+              </p>
+              <Popover ref="suppliedByUser">
+                  <div v-for="(usd, address) in data.suppliedByUser" :key="address" class="flex items-center gap-2">
+                    <div>
+                        <span style="font-family: monospace">{{ address }}</span>: <span>{{ toUSDCurrency(usd) }}</span>
+                    </div>
+                  </div>
+              </Popover>
+              <p class="m-0">
+                Daily earnings: {{ toUSDCurrency(data.oldTotalEarnings) }} -> {{ toUSDCurrency(data.maxTotalEarnings) }}
+              </p>
+              <p class="m-0">
+                APR: {{data.currentAPR}}% -> {{data.maxAPR}}%
+              </p>
+              <p class="m-0">
+                Idle: {{ toUSDCurrency(data.usd) }} <label v-if="data.users.length > 1" @click="showIdleByUser">ℹ️</label>
+              </p>
+              <Popover ref="idleByUser">
+                  <div v-for="(usd, address) in data.idleBalancesByUser" :key="address" class="flex items-center gap-2">
+                    <div>
+                        <span style="font-family: monospace">{{ address }}</span>: <span>{{ toUSDCurrency(usd) }}</span>
+                    </div>
+                  </div>
+              </Popover>
             </template>
           </Card>
         </template>
@@ -191,7 +257,7 @@ function toUSDCurrency(n: number | string): string {
     <template #title>Liquidity by assets</template>
     <template #content>
       <div class="asset-summarized-info">
-        <template v-if="data" v-for="(assetProps, asset) in data.cumulativeValuesByAsset">
+        <template v-if="data" v-for="(assetProps, asset, index) in data.cumulativeValuesByAsset" :key="asset">
           <Card class="card-chain">
             <template #title>
               <Image :src='assetImgSrc(asset)' :alt='asset' width="50px" />
@@ -199,7 +265,18 @@ function toUSDCurrency(n: number | string): string {
             <template #content>
               <p class="m-0">
                 Supplied: {{assetProps.newUserSupplied}} ({{toUSDCurrency(assetProps.newUserSuppliedUsd)}})
+                <label
+                    v-if="data.users.length > 1 && data.suppliedByAssetByUser[asset]"
+                    @click="event => showDepositByAssetByUser(index)(event)">ℹ️
+                </label>
               </p>
+              <Popover ref="suppliedByAssetByUser">
+                  <div v-for="({ amount, usd }, address) in data.suppliedByAssetByUser[asset]" :key="address" class="flex items-center gap-2">
+                    <div>
+                        <span style="font-family: monospace">{{ address }}</span>: <span>{{amount}} ({{ toUSDCurrency(usd) }})</span>
+                    </div>
+                  </div>
+              </Popover>
               <p class="m-0">
                 Daily earnings: {{ assetProps.oldDailyEarnings }} ({{toUSDCurrency(assetProps.oldDailyEarningsUsd)}}) -> {{ assetProps.maxDailyEarnings }} ({{toUSDCurrency(assetProps.maxDailyEarningsUsd)}})
               </p>
@@ -207,8 +284,15 @@ function toUSDCurrency(n: number | string): string {
                 APR: {{assetProps.currentAPR}}% -> {{assetProps.maxAPR}}%
               </p>
               <p class="m-0">
-                Idle: {{data.idleBalancesByAsset[asset].idle}} ({{toUSDCurrency(data.idleBalancesByAsset[asset].idleUsd)}})
+                Idle: {{data.idleBalancesByAsset[asset].amount}} ({{toUSDCurrency(data.idleBalancesByAsset[asset].usd)}}) <label v-if="data.users.length > 1 && data.idleBalancesByAssetByUser[asset] && Object.keys(data.idleBalancesByAssetByUser[asset]).length" @click="(event) => showIdleByAssetByUser(index)(event)">ℹ️</label>
               </p>
+              <Popover ref="idleByAssetByUser">
+                <div v-for="({ amount, usd }, address) in data.idleBalancesByAssetByUser[asset]" :key="address" class="flex items-center gap-2">
+                  <div>
+                      <span style="font-family: monospace">{{ address }}</span>: <span>{{ amount }} ({{ toUSDCurrency(usd) }})</span>
+                  </div>
+                </div>
+              </Popover>
             </template>
           </Card>
         </template>
@@ -220,34 +304,85 @@ function toUSDCurrency(n: number | string): string {
     <template #title>Liquidity by chains</template>
     <template #content>
       <div class="chain-summarized-info">
-        <template v-if="data" v-for="(chainProps, chain) in data.cumulativeValuesByChains">
+        <template v-if="data" v-for="(chainProps, chain, index) in data.cumulativeValuesByChains">
           <Card class="card-chain">
             <template #title>
-
-              <Image :src='chainImgSrc(chain)' :alt='chain' width="50px" />
+            <Image :src='chainImgSrc(chain)' :alt='chain' width="50px" />
             </template>
             <template #content>
-              <template v-for="(assetProps, asset) in chainProps">
-                <Card class="card-asset">
-                  <template #title>
-                    <Image :src='assetImgSrc(asset)' :alt='asset' width="30px" />
-                  </template>
-                  <template #content>
-                    <p class="m-0">
-                      Supplied: {{assetProps.newUserSupplied}} ({{toUSDCurrency(assetProps.newUserSuppliedUsd)}})
-                    </p>
-                    <p class="m-0">
-                      Daily earnings: {{ assetProps.oldDailyEarnings }} ({{toUSDCurrency(assetProps.oldDailyEarningsUsd)}}) -> {{ assetProps.maxDailyEarnings }} ({{toUSDCurrency(assetProps.maxDailyEarningsUsd)}})
-                    </p>
-                    <p class="m-0">
-                      APR: {{assetProps.currentAPR}}% -> {{assetProps.maxAPR}}%
-                    </p>
-                    <p class="m-0">
-                      Idle: {{data.idleBalancesByChain[chain][asset].idle}} ({{toUSDCurrency(data.idleBalancesByChain[chain][asset].idleUsd)}})
-                    </p>
-                  </template>
-                </Card>
-              </template>
+              <p class="m-0">
+                Total supplied: {{toUSDCurrency(data.chainAggregatedStats[chain].newUserSuppliedUsd)}}
+                <label
+                    v-if="data.users.length > 1 && data.suppliedByChainByUser[chain]"
+                    @click="event => showDepositByChainByUser(index)(event)">ℹ️
+                </label>
+              </p>
+              <Popover ref="suppliedByChainByUser">
+                  <div v-for="(usd, address) in data.suppliedByChainByUser[chain]" :key="address" class="flex items-center gap-2">
+                    <div>
+                        <span style="font-family: monospace">{{ address }}</span>: <span>{{ toUSDCurrency(usd) }}</span>
+                    </div>
+                  </div>
+              </Popover>
+              <p class="m-0">
+                Daily earnings: {{toUSDCurrency(data.chainAggregatedStats[chain].oldDailyEarningsUsd)}} -> {{toUSDCurrency(data.chainAggregatedStats[chain].maxDailyEarningsUsd)}}
+              </p>
+              <p class="m-0">
+                APR: {{data.chainAggregatedStats[chain].currentAPR}}% -> {{data.chainAggregatedStats[chain].maxAPR}}%
+              </p>
+              <p class="m-0">
+                Idle: {{toUSDCurrency(data.chainAggregatedStats[chain].usd)}} <label v-if="data.users.length > 1" @click="(event) => showIdleByChainByUser(index)(event)">ℹ️</label>
+              </p>
+              <Popover ref="idleByChainByUser">
+                <div v-for="(usd, address) in data.idleBalancesByChainByUser[chain]" :key="address" class="flex items-center gap-2">
+                  <div>
+                      <span style="font-family: monospace">{{ address }}</span>: <span>{{ toUSDCurrency(usd) }}</span>
+                  </div>
+                </div>
+              </Popover>
+              <Panel header="Assets" toggleable collapsed>
+                <template v-for="(assetProps, asset) in chainProps">
+                  <Card class="card-asset">
+                    <template #title>
+                      <Image :src='assetImgSrc(asset)' :alt='asset' width="30px" />
+                    </template>
+                    <template #content>
+                      <p class="m-0">
+                        Supplied: {{assetProps.newUserSupplied}} ({{toUSDCurrency(assetProps.newUserSuppliedUsd)}})
+                        <label v-if="data.users.length > 1 && data.suppliedByChainByAssetByUser[chain] && data.suppliedByChainByAssetByUser[chain][asset]" @click="event => showDepositByChainByAssetByUser(chain, asset)(event)">ℹ️</label>
+                      </p>
+                      <Popover :ref="(el: any) => { (suppliedByChainByAssetByUser as any)[chain + asset] = el }" :key="chain + asset">
+                        <div v-for="({ amount, usd }, address) in data.suppliedByChainByAssetByUser[chain][asset]" :key="address" class="flex items-center gap-2">
+                          <div>
+                            <span style="font-family: monospace">{{ address }}</span>: <span>{{ amount }} ({{ toUSDCurrency(usd) }})</span>
+                          </div>
+                        </div>
+                      </Popover>
+                      <p class="m-0">
+                        Daily earnings: {{ assetProps.oldDailyEarnings }} ({{toUSDCurrency(assetProps.oldDailyEarningsUsd)}}) -> {{ assetProps.maxDailyEarnings }} ({{toUSDCurrency(assetProps.maxDailyEarningsUsd)}})
+                      </p>
+                      <p class="m-0">
+                        APR: {{assetProps.currentAPR}}% -> {{assetProps.maxAPR}}%
+                      </p>
+                      <p class="m-0">
+                        Idle: {{data.idleBalancesByChain[chain][asset].amount}} ({{toUSDCurrency(data.idleBalancesByChain[chain][asset].usd)}})
+                        <label
+                            v-if="data.users.length > 1 && data.idleBalancesByChainByAssetByUser[chain] && data.idleBalancesByChainByAssetByUser[chain][asset]"
+                            @click="event => showIdleByChainByAssetByUser(chain, asset)(event)">ℹ️
+                        </label>
+                      </p>
+                      <Popover :ref="(el: any) => { (idleByChainByAssetByUser as any)[chain + asset] = el }" :key="chain + asset">
+                        <span class="font-medium block mb-2">Idle balances</span>
+                        <div v-for="({ amount, usd }, address) in data.idleBalancesByChainByAssetByUser[chain][asset]" :key="address" class="flex items-center gap-2">
+                          <div>
+                            <span style="font-family: monospace">{{ address }}</span>: <span>{{ amount }} ({{ toUSDCurrency(usd) }})</span>
+                          </div>
+                        </div>
+                      </Popover>
+                    </template>
+                  </Card>
+                </template>
+              </Panel>
             </template>
           </Card>
         </template>
@@ -266,18 +401,34 @@ function toUSDCurrency(n: number | string): string {
             <template #content>
               <p class="m-0">
                 Supplied: {{pool.supplied}} ({{toUSDCurrency(pool.suppliedUsd)}})
+                <label
+                    v-if="data.users.length > 1 && data.suppliedByChainByAssetByBorrowableByUser[pool.chain] && data.suppliedByChainByAssetByBorrowableByUser[pool.chain][pool.asset] && data.suppliedByChainByAssetByBorrowableByUser[pool.chain][pool.asset][pool.borrowable]"
+                    @click="event => showDepositByChainByAssetByBorrowableByUser(pool.chain, pool.borrowable)(event)">ℹ️
+                </label>
               </p>
+              <Popover :ref="(el: any) => { (suppliedByChainByAssetByBorrowableByUser as any)[pool.chain + pool.borrowable] = el }" :key="pool.chain + pool.borrowable">
+                <div v-for="({ amount, usd }, address) in data.suppliedByChainByAssetByBorrowableByUser[pool.chain][pool.asset][pool.borrowable]" :key="address" class="flex items-center gap-2">
+                  <div>
+                    <span style="font-family: monospace">{{ address }}</span>: <span>{{ amount }} ({{ toUSDCurrency(usd) }})</span>
+                  </div>
+                </div>
+              </Popover>
               <p class="m-0">
                 Daily earnings: {{ pool.earningsOld }} ({{toUSDCurrency(pool.earningsOldUsd)}}) -> {{ pool.earningsNew }} ({{toUSDCurrency(pool.earningsNewUsd)}})
               </p>
               <p class="m-0">
-                APR: {{pool.aprOld}}% -> {{pool.aprNew}}%
+                APR: {{pool.aprOld}}% -> {{pool.aprNew}}% <label v-if="(
+                    (
+                        data.cumulativeValuesByAsset[pool.asset] && data.cumulativeValuesByAsset[pool.asset].newUserSupplied > 0) ||
+                        (data.idleBalancesByAsset[pool.asset] && data.idleBalancesByAsset[pool.asset].amount > 0)
+                    ) && pool.aprNew > data.cumulativeValuesByAsset[pool.asset].maxAPR">🔥</label>
               </p>
               <p class="m-0">
                 Utilization: {{pool.utilization}}% / {{pool.kink}}%
               </p>
               <p class="m-0">
-                Capacity: {{pool.availableToDeposit}} ({{toUSDCurrency(pool.availableToDepositUsd)}})
+                Capacity: {{pool.availableToDeposit}} ({{toUSDCurrency(pool.availableToDepositUsd)}}) <label v-if="pool.availableToDepositUsd > 1_000">👀</label>
+                <label v-if="pool.availableToDepositUsd > 1_000 && (data.idleBalancesByChain[pool.chain][pool.asset] && data.idleBalancesByChain[pool.chain][pool.asset].usd > 10)" @click="event => showIdleByChainByAssetByUser(pool.chain, pool.asset)(event)">ℹ️</label>
               </p>
               <p class="m-0">
                 TVL: {{pool.tvl}} ({{toUSDCurrency(pool.tvlUsd)}})
@@ -339,7 +490,7 @@ function toUSDCurrency(n: number | string): string {
                 <div style="display: flex; align-items: center; justify-content: space-between">
                   <div>
                   <Image :src='chainImgSrc(pool.chain)' :alt='pool.chain' width="25px"/>
-                  <Image :src='protocolImgSrc(pool.platform)' :alt='pool.platform' width="25px"/>
+                  <Image :src='platformImgSrc(pool.platform)' :alt='pool.platform' width="25px"/>
                   </div>
                   <Image :src='assetImgSrc(pool.asset)' :alt='pool.asset' width="25px"/>
                 </div>

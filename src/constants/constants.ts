@@ -1,4 +1,3 @@
-import axios from 'axios'
 import Web3 from 'web3'
 
 export enum Chains {
@@ -14,7 +13,21 @@ export enum ASSETS {
   FTM = 'FTM',
   wstETH = 'wstETH',
   OP = 'OP',
+  IBEX = 'IBEX',
 }
+
+export const assetConf = {
+  [ASSETS.USDC]: { tokenId: 'usd-coin' },
+  [ASSETS.ETH]: { tokenId: 'weth' },
+  [ASSETS.FTM]: { tokenId: 'wrapped-fantom' },
+  [ASSETS.wstETH]: { tokenId: 'wrapped-steth' },
+  [ASSETS.OP]: { tokenId: 'optimism' },
+  [ASSETS.IBEX]: { tokenId: 'impermax-2' },
+}
+export const assetByTokenId = Object.assign(
+  {},
+        ...Object.entries(assetConf).map(([asset, { tokenId: id }]) => ({ [id]: asset })),
+)
 
 export const web3Inst = new Web3('')
 
@@ -37,6 +50,7 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0x04db41d3afbaa587bef2baa23ee383631196f243'),
       web3Inst.utils.toChecksumAddress('0xbebc60ca78147c04ede280f7f46777e8cf139924'),
       web3Inst.utils.toChecksumAddress('0xe43872854ce04be138a81a383901c8d6f55c5b20'),
+      web3Inst.utils.toChecksumAddress('0x897cf921b95e493fca1fe007573b89a98974c45b'),
     ],
     rpcUrls: ['https://mainnet.base.org', 'https://1rpc.io/base', 'https://base.meowrpc.com'],
     chainId: 8453,
@@ -81,6 +95,7 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0xf92Fe79d269C3C315973dFcda7D748B1e506991B'),
       web3Inst.utils.toChecksumAddress('0x382B611B67169Da69D5073746b4EF94cd45Ef620'),
       web3Inst.utils.toChecksumAddress('0x38581cD06888569e157ae68d8DF64bD4f48B9eb1'),
+      web3Inst.utils.toChecksumAddress('0xD620aDF0B665De2604acC976fD962E4C33dAb398'),
     ],
     rpcUrls: ['https://rpc.scroll.io', 'https://1rpc.io/scroll', 'https://rpc.ankr.com/scroll', ],
     chainId: 534352,
@@ -88,6 +103,7 @@ export const CHAIN_CONF: {
       '0x5300000000000000000000000000000000000004': ASSETS.ETH,
       '0xf610A9dfB7C89644979b4A0f27063E9e7d7Cda32': ASSETS.wstETH,
       '0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4': ASSETS.USDC,
+      '0x78Ab77F7D590FB101AA18affc238cbfEA31EAd5b': ASSETS.IBEX,
     },
   },
   [Chains.FTM]: {
@@ -111,41 +127,5 @@ export const CHAIN_CONF: {
       '0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83': ASSETS.FTM,
     },
   },
-}
-
-const assetPrices: { [key: string]: number } = {
-  [ASSETS.USDC]: 1.0,
-}
-
-export async function getAssetPrice(asset: ASSETS) {
-  if (assetPrices[asset] !== undefined) {
-    return assetPrices[asset]
-  }
-  let url
-
-  switch (asset) {
-    case ASSETS.ETH: {
-      url = 'https://api.coinbase.com/v2/prices/ETH-USD/spot'
-      break
-    }
-    case ASSETS.wstETH: {
-      url = 'https://api.coinbase.com/v2/prices/wstETH-USD/spot'
-      break
-    }
-    case ASSETS.OP: {
-      url = 'https://api.coinbase.com/v2/prices/OP-USD/spot'
-      break
-    }
-    case ASSETS.FTM: {
-      url = 'https://api.coinbase.com/v2/prices/FTM-USD/spot'
-      break
-    }
-    default:
-      throw new Error(`unable to fetch price:: unknown asset ${asset}`)
-  }
-  const res = (await axios.get(url)).data.data
-  assetPrices[asset] = Number(res.amount)
-
-  return assetPrices[asset]
 }
 
