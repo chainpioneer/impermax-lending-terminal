@@ -486,16 +486,14 @@ function toUSDCurrency(n: number | string): string {
           <div>
             <component v-for="chain in data.poolChains" @click="toggleChainSelected(chain)">
               <Image :src='chainImgSrc(chain)' :alt='chain' width="30px"
-                     :style="`margin-right: 10px; opacity: ${selectedChains[chain] ? '100%' : '10%'}; cursor: pointer`"
-
+               :style="`border-radius: 100%; box-shadow: 0 3px 7px -6px black; margin-right: 10px; opacity: ${selectedChains[chain] ? '100%' : '10%'}; cursor: pointer`"
               />
             </component>
           </div>
           <div>
             <component v-for="asset in data.poolAssets" @click="toggleAssetSelected(asset)">
               <Image :src='assetImgSrc(asset)' :alt='asset' width="30px"
-                     :style="`margin-right: 10px; opacity: ${selectedAssets[asset] ? '100%' : '10%'}; cursor: pointer`"
-
+               :style="`border-radius: 100%; box-shadow: 0 3px 7px -6px black; margin-right: 10px; opacity: ${selectedAssets[asset] ? '100%' : '10%'}; cursor: pointer`"
               />
             </component>
           </div>
