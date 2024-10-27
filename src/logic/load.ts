@@ -30,7 +30,7 @@ type ChainStats = {
   maxAPR: number
 }
 
-type Deposit = {
+export type Deposit = {
   amount: number
   bn: bigint
   usd: number
@@ -80,7 +80,7 @@ export default async function load(users: string[]) {
   const suppliedByAssetByUser: { [asset: string]: { [user: string]: Deposit } } = {}
   const suppliedByChainByUser: { [chain: string]: { [user: string]: number } } = {}
   const suppliedByChainByAssetByUser: { [chain: string]: { [asset: string]: { [user: string]: Deposit } } } = {}
-  const suppliedByChainByAssetByBorrowableByUser: { [chain: string]: { [asset: string]: { [borrowable: string]: { [user: string]: Deposit } } } } = {}
+  const suppliedByChainByBorrowableByUser: { [chain: string]: { [borrowable: string]: { [user: string]: Deposit } } } = {}
 
   const pools: Pool[] = []
 
@@ -362,22 +362,18 @@ export default async function load(users: string[]) {
             suppliedByChainByUser[chain] = { [user]: deposit.usd }
           }
 
-          if (suppliedByChainByAssetByBorrowableByUser[chain]) {
-            if (suppliedByChainByAssetByBorrowableByUser[chain][asset]) {
-              if (suppliedByChainByAssetByBorrowableByUser[chain][asset][b]) {
-                if (suppliedByChainByAssetByBorrowableByUser[chain][asset][b][user]) {
-                  throw new Error(`already received borrowable ${b} balance for user ${user}`)
-                } else {
-                  suppliedByChainByAssetByBorrowableByUser[chain][asset][b][user] = { ...deposit }
-                }
+          if (suppliedByChainByBorrowableByUser[chain]) {
+            if (suppliedByChainByBorrowableByUser[chain][b]) {
+              if (suppliedByChainByBorrowableByUser[chain][b][user]) {
+                throw new Error(`already received borrowable ${b} balance for user ${user}`)
               } else {
-                suppliedByChainByAssetByBorrowableByUser[chain][asset][b] = { [user]: { ...deposit } }
+                suppliedByChainByBorrowableByUser[chain][b][user] = { ...deposit }
               }
             } else {
-              suppliedByChainByAssetByBorrowableByUser[chain][asset] = { [b] : { [user]: { ...deposit } } }
+              suppliedByChainByBorrowableByUser[chain][b] = { [user]: { ...deposit } }
             }
           } else {
-            suppliedByChainByAssetByBorrowableByUser[chain] = { [asset]: { [b]: { [user]: { ...deposit } } } }
+            suppliedByChainByBorrowableByUser[chain] = { [b]: { [user]: { ...deposit } } }
           }
         }
         
@@ -391,17 +387,17 @@ export default async function load(users: string[]) {
       const platform = name.substring(0, name.indexOf(' '))
       const newSupply = newTotalBorrows + newTotalBalance
 
-      const oldDailyYield = oldBorrowRate * 24n * 3600n * oldTotalBorrows
+      const oldDailyYield = oldBorrowRate * 24n * 3600n * oldTotalBorrows  * (ONE - reserveFactor) / ONE
 
       const oldSupply = oldTotalBorrows + oldTotalBalance
 
-      const oldDailyApr = Number(((oldDailyYield / oldSupply) * (ONE - reserveFactor)) / ONE) / 1e18
+      const oldDailyApr = Number(oldDailyYield / oldSupply) / 1e18
 
       const oldDailyEarnings = Math.floor(oldUserSupplied * oldDailyApr)
 
-      const newDailyYield = newBorrowRate * 3600n * 24n * newTotalBorrows
+      const newDailyYield = newBorrowRate * 3600n * 24n * newTotalBorrows * (ONE - reserveFactor) / ONE
 
-      const newDailyApr = Number(((newDailyYield / newSupply) * (ONE - reserveFactor)) / ONE) / 1e18
+      const newDailyApr = Number(newDailyYield / newSupply) / 1e18
       const newDailyEarnings = Math.floor(newUserSupplied * newDailyApr)
 
       const utilization = (newTotalBorrows * ONE) / newSupply
@@ -502,12 +498,12 @@ export default async function load(users: string[]) {
       if (aca) {
         aca.currentAPR = aca.newUserSupplied === 0 ? 0 : Number((aca.oldDailyEarnings * 36500 / aca.newUserSupplied).toFixed(2))
         aca.maxAPR = aca.newUserSupplied === 0 ? 0 : Number((aca.maxDailyEarnings * 36500 / aca.newUserSupplied).toFixed(2))
+        aca.oldDailyEarningsUsd = Number((aca.oldDailyEarnings * getAssetPrice(a as ASSETS) / div).toFixed(2))
+        aca.maxDailyEarningsUsd = Number((aca.maxDailyEarnings * getAssetPrice(a as ASSETS) / div).toFixed(2))
+        aca.newUserSuppliedUsd = Number((aca.newUserSupplied * getAssetPrice(a as ASSETS) / div).toFixed(2))
         aca.oldDailyEarnings = Number((aca.oldDailyEarnings / div).toFixed(4))
         aca.newUserSupplied = Number((aca.newUserSupplied / div).toFixed(4))
         aca.maxDailyEarnings = Number((aca.maxDailyEarnings / div).toFixed(4))
-        aca.oldDailyEarningsUsd = Number((aca.oldDailyEarnings * getAssetPrice(a as ASSETS)).toFixed(2))
-        aca.maxDailyEarningsUsd = Number((aca.maxDailyEarnings * getAssetPrice(a as ASSETS)).toFixed(2))
-        aca.newUserSuppliedUsd = Number((aca.newUserSupplied * getAssetPrice(a as ASSETS)).toFixed(2))
         chainAggregatedStats[c].newUserSuppliedUsd = Number((chainAggregatedStats[c].newUserSuppliedUsd + aca.newUserSuppliedUsd).toFixed(2))
         chainAggregatedStats[c].oldDailyEarningsUsd = Number((chainAggregatedStats[c].oldDailyEarningsUsd + aca.oldDailyEarningsUsd).toFixed(2))
         chainAggregatedStats[c].maxDailyEarningsUsd = Number((chainAggregatedStats[c].maxDailyEarningsUsd + aca.maxDailyEarningsUsd).toFixed(2))
@@ -561,12 +557,12 @@ export default async function load(users: string[]) {
       maxTotalEarnings += Number(maxEarnings)
       ca.currentAPR = ca.newUserSupplied === 0 ? 0 : Number((ca.oldDailyEarnings * 36500 / ca.newUserSupplied).toFixed(2))
       ca.maxAPR = ca.newUserSupplied === 0 ? 0 : Number((ca.maxDailyEarnings * 36500 / ca.newUserSupplied).toFixed(2))
+      ca.oldDailyEarningsUsd = Number((ca.oldDailyEarnings * getAssetPrice(a as ASSETS) / div).toFixed(2))
+      ca.maxDailyEarningsUsd = Number((ca.maxDailyEarnings * getAssetPrice(a as ASSETS) / div).toFixed(2))
+      ca.newUserSuppliedUsd = Number((ca.newUserSupplied * getAssetPrice(a as ASSETS) / div).toFixed(2))
       ca.oldDailyEarnings = Number((ca.oldDailyEarnings / div).toFixed(4))
       ca.newUserSupplied = Number((ca.newUserSupplied / div).toFixed(4))
       ca.maxDailyEarnings = Number((ca.maxDailyEarnings / div).toFixed(4))
-      ca.oldDailyEarningsUsd = Number((ca.oldDailyEarnings * getAssetPrice(a as ASSETS)).toFixed(2))
-      ca.maxDailyEarningsUsd = Number((ca.maxDailyEarnings * getAssetPrice(a as ASSETS)).toFixed(2))
-      ca.newUserSuppliedUsd = Number((ca.newUserSupplied * getAssetPrice(a as ASSETS)).toFixed(2))
       if (cumulativeValuesByAsset[a].newUserSuppliedUsd + idleBalancesByAsset[a].usd < 1) {
         delete cumulativeValuesByAsset[a]
       }
@@ -627,10 +623,8 @@ export default async function load(users: string[]) {
     Object.values(userMap).forEach(sortByUserSimple)
   })
 
-  Object.values(suppliedByChainByAssetByBorrowableByUser).forEach((chau) => {
-    Object.values(chau).forEach((au) => {
-      Object.values(au).forEach(sortByUserDeposit)
-    })
+  Object.values(suppliedByChainByBorrowableByUser).forEach((chau) => {
+    Object.values(chau).forEach(sortByUserDeposit)
   })
 
   const maxAPR = ((maxTotalEarnings * 36500) / totalDeposited).toFixed(2)
@@ -673,7 +667,7 @@ export default async function load(users: string[]) {
     suppliedByAssetByUser,
     suppliedByChainByUser,
     suppliedByChainByAssetByUser,
-    suppliedByChainByAssetByBorrowableByUser,
+    suppliedByChainByBorrowableByUser,
     totalDeposited: totalDeposited.toFixed(2),
     oldTotalEarnings: oldTotalEarnings.toFixed(2),
     newTotalEarnings: newTotalEarnings.toFixed(2),

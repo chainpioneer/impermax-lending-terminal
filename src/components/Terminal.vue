@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref} from 'vue'
-import load from "../logic/load";
+import load, {Deposit} from "../logic/load";
 import {isAddress} from "web3-validator";
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
@@ -29,7 +29,7 @@ const suppliedByUser = ref();
 const suppliedByAssetByUser = ref();
 const suppliedByChainByUser = ref();
 const suppliedByChainByAssetByUser = ref({});
-const suppliedByChainByAssetByBorrowableByUser = ref({});
+const suppliedByChainByBorrowableByUser = ref<{ [chain: string]: { [borrowable: string]: { [user: string]: Deposit } } }>({});
 
 const selectedChains = ref<{ [chain: string]: boolean }>({});
 const selectedAssets = ref<{ [asset: string]: boolean }>({});
@@ -67,7 +67,7 @@ const showDepositByChainByAssetByUser = (chain: number, asset: number) => (event
 }
 
 const showDepositByChainByAssetByBorrowableByUser = (chain: string, borrowable: string) => (event: any) => {
-  (suppliedByChainByAssetByBorrowableByUser as any).value[chain + borrowable].toggle(event);
+  (suppliedByChainByBorrowableByUser as any).value[chain + borrowable].toggle(event);
 }
 
 const toggleChainSelected = (chain: string) => {
@@ -510,12 +510,12 @@ function toUSDCurrency(n: number | string): string {
                 Supplied: {{pool.supplied}} ({{toUSDCurrency(pool.suppliedUsd)}})
                 <label
                     style="cursor: pointer"
-                    v-if="data.users.length > 1 && data.suppliedByChainByAssetByBorrowableByUser[pool.chain] && data.suppliedByChainByAssetByBorrowableByUser[pool.chain][pool.asset] && data.suppliedByChainByAssetByBorrowableByUser[pool.chain][pool.asset][pool.borrowable]"
+                    v-if="data.users.length > 1 && data.suppliedByChainByBorrowableByUser[pool.chain] && data.suppliedByChainByBorrowableByUser[pool.chain][pool.borrowable]"
                     @click="event => showDepositByChainByAssetByBorrowableByUser(pool.chain, pool.borrowable)(event)">ℹ️
                 </label>
               </p>
-              <Popover :ref="(el: any) => { (suppliedByChainByAssetByBorrowableByUser as any)[pool.chain + pool.borrowable] = el }" :key="pool.chain + pool.borrowable">
-                <div v-for="({ amount, usd }, address) in data.suppliedByChainByAssetByBorrowableByUser[pool.chain][pool.asset][pool.borrowable]" :key="address" class="flex items-center gap-2">
+              <Popover :ref="(el: any) => { (suppliedByChainByBorrowableByUser as any)[pool.chain + pool.borrowable] = el }" :key="pool.chain + pool.borrowable">
+                <div v-for="({ amount, usd }, address) in data.suppliedByChainByBorrowableByUser[pool.chain][pool.borrowable]" :key="address" class="flex items-center gap-2">
                   <div>
                     <span style="font-family: monospace">{{ address }}</span>: <span>{{ amount }} ({{ toUSDCurrency(usd) }})</span>
                   </div>
