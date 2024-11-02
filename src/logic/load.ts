@@ -1,6 +1,7 @@
 import {Call, Contract} from 'ethcall'
 
 import borrowableAbi from '../../abi/borrowable.json' assert {type: 'json'}
+import stakingPoolAbi from '../../abi/stakingPool.json' assert {type: 'json'}
 import vaultAbi from '../../abi/vault.json' assert {type: 'json'}
 import collateralAbi from '../../abi/collateral.json' assert {type: 'json'}
 import {ASSETS, CHAIN_CONF, Chains} from '../constants/constants'
@@ -52,6 +53,10 @@ type Pool = {
   earningsNew: number
   earningsOldUsd: number
   earningsNewUsd: number
+  stakingDailyEarningsUsd: number
+  stakingAPR: number
+  stakingDailyEarnings: number
+  stakingRewardAsset: string
   availableToDeposit: number
   availableToDepositUsd: number
   vaultAPR: number | string
@@ -61,6 +66,10 @@ type Pool = {
   vault: string
   stable: boolean
 }
+
+const aprThreshold = 10
+const capacityThreshold = -1
+const minTVL = 1_000
 
 export default async function load(users: string[]) {
 
@@ -129,6 +138,19 @@ export default async function load(users: string[]) {
         callsPerBor = calls.length
       }
     })
+    let callsPerStakingPool = 0
+    Object.values(conf.staking).forEach(({ pool, rewardToken }, i) => {
+      const stPool = new Contract(pool, stakingPoolAbi)
+      calls.push(
+        stPool.periodFinish(rewardToken),
+        stPool.rewardRate(rewardToken),
+        stPool.totalSupply(),
+        ...users.map((u) => stPool.balanceOf(u)),
+      )
+      if (i === 0) {
+        callsPerStakingPool = calls.length
+      }
+    })
 
     const borrowablesData = await callWithTimeout(chain, calls, blockNumber)
 
@@ -138,6 +160,8 @@ export default async function load(users: string[]) {
       collaterals.push(borrowablesData[callsPerBor * i])
       underlyings[borrowablesData[callsPerBor * i + 1]] = true
     })
+
+    let stakingPoolCursor = 0
 
     const calls2: Call[] = []
     collaterals.forEach((c) => {
@@ -306,10 +330,16 @@ export default async function load(users: string[]) {
       const div = asset === ASSETS.USDC ? 10 ** 6 : 10 ** 18
       
       let balance: bigint = 0n
-      
+      let stakedBalance: bigint = 0n
+
       for (let i = 0; i < users.length; i++) {
         const user = users[i]
-        const _deposit = deposits[i] as bigint
+        let _deposit = deposits[i] as bigint
+        if (conf.staking[b]) {
+          const stakedBn = borrowablesData[callsPerBor * conf.borrowables.length + stakingPoolCursor * callsPerStakingPool + 3 + i]
+          _deposit += stakedBn
+          stakedBalance += stakedBn
+        }
         if (_deposit > 0n) {
           const bn = (_deposit * newExchangeRate) / ONE
           const deposit: Deposit = {
@@ -376,7 +406,6 @@ export default async function load(users: string[]) {
             suppliedByChainByBorrowableByUser[chain] = { [b]: { [user]: { ...deposit } } }
           }
         }
-        
         balance += _deposit
       }
 
@@ -397,8 +426,38 @@ export default async function load(users: string[]) {
 
       const newDailyYield = newBorrowRate * 3600n * 24n * newTotalBorrows * (ONE - reserveFactor) / ONE
 
+      let stakingDailyYield = 0n
+      let stakingDailyEarningsUsd = 0
+      let stakingAPR = 0
+      let stakingDailyEarnings = 0
+      let totalStakedUsd = 0
+      let stakingRewardAsset: string = ''
+
+
+      const suppliedUsd = Number(((newUserSupplied * (getAssetPrice(asset))) / div).toFixed(2))
+      if (conf.staking[b]) {
+        const periodFinish = borrowablesData[callsPerBor * conf.borrowables.length + stakingPoolCursor * callsPerStakingPool]
+        if (periodFinish > blockTimestamp) {
+          stakingRewardAsset = conf.assets[conf.staking[b].rewardToken]
+          const _div = stakingRewardAsset === ASSETS.USDC ? 1e6 : 1e18
+          const rewardRate = borrowablesData[callsPerBor * conf.borrowables.length + stakingPoolCursor * callsPerStakingPool + 1]
+          const totalSupply: bigint = borrowablesData[callsPerBor * conf.borrowables.length + stakingPoolCursor * callsPerStakingPool + 2]
+          const yearlyRewardUsd = Number(rewardRate * 24n * 3600n * 365n) / _div * getAssetPrice(stakingRewardAsset as ASSETS)
+          stakingDailyYield = rewardRate * 24n * 3600n * stakedBalance / totalSupply
+          totalStakedUsd = Number(totalSupply * newExchangeRate / ONE) / div * getAssetPrice(asset)
+          stakingAPR = Number((yearlyRewardUsd * 100 / totalStakedUsd).toFixed(2))
+        }
+        stakingPoolCursor++
+      }
+
       const newDailyApr = Number(newDailyYield / newSupply) / 1e18
       const newDailyEarnings = Math.floor(newUserSupplied * newDailyApr)
+      if (stakingAPR > 0) {
+        const _div = stakingRewardAsset === ASSETS.USDC ? 1e6 : 1e18
+        stakingDailyEarningsUsd = stakingDailyYield === 0n ? 0 : Number(((Number(stakingDailyYield) *
+            (getAssetPrice(stakingRewardAsset as ASSETS)) / _div)).toFixed(2))
+        stakingDailyEarnings = Number((Number(stakingDailyYield) / _div).toFixed(4))
+      }
 
       const utilization = (newTotalBorrows * ONE) / newSupply
       const availableToDeposit =
@@ -408,7 +467,6 @@ export default async function load(users: string[]) {
 
       const vaultExchangeRateAfterReinvest = dataFromCall4[i * 4 + 2]
       const vaultBalanceAfterReinvest = dataFromCall4[i * 4 + 3]
-
 
       const reinvestPeriod = blockTimestamp - pastVaultStateByBorrowable[b].timestamp
 
@@ -425,7 +483,11 @@ export default async function load(users: string[]) {
         tvl: Number((Number(newSupply) / div).toFixed(4)),
         tvlUsd: Number((Number(newSupply) / div * getAssetPrice(asset)).toFixed(2)),
         supplied: Number((newUserSupplied / div).toFixed(4)),
-        suppliedUsd: Number(((newUserSupplied * (getAssetPrice(asset))) / div).toFixed(2)),
+        stakingDailyEarningsUsd,
+        stakingAPR,
+        stakingDailyEarnings,
+        stakingRewardAsset,
+        suppliedUsd,
         kink: Number(kinkUtilizationRate) / 1e16,
         utilization: Number((Number(utilization) / 1e16).toFixed(2)),
         aprOld: Number((oldDailyApr * 36500).toFixed(2)),
@@ -636,8 +698,7 @@ export default async function load(users: string[]) {
       (x) => {
         const good = x.suppliedUsd > 1 ||
         (
-            (x.aprNew > 8 && x.availableToDepositUsd > 1000) ||
-            (x.aprNew > 15 && x.tvlUsd > 100_000)
+            ((x.stakingAPR + x.aprNew) > aprThreshold && x.availableToDepositUsd > capacityThreshold && x.tvlUsd > minTVL)
         )
         if (good) {
           poolChains[x.chain] = true
@@ -645,7 +706,7 @@ export default async function load(users: string[]) {
         }
         return good
       }
-  ).sort((a, b) => b.aprNew - a.aprNew)
+  ).sort((a, b) => (b.aprNew + b.stakingAPR) - (a.aprNew + a.stakingAPR))
 
   const currentAPR = ((oldTotalEarnings * 36500) / totalDeposited).toFixed(2)
 

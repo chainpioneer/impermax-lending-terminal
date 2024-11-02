@@ -523,13 +523,16 @@ function toUSDCurrency(n: number | string): string {
               </Popover>
               <p class="m-0">
                 Daily earnings: {{ pool.earningsOld }} ({{toUSDCurrency(pool.earningsOldUsd)}}) -> {{ pool.earningsNew }} ({{toUSDCurrency(pool.earningsNewUsd)}})
+                <span style="color: green" v-if="pool.stakingDailyEarnings"> +{{pool.stakingDailyEarnings}} {{pool.stakingRewardAsset}} ({{toUSDCurrency(pool.stakingDailyEarningsUsd)}})</span>
               </p>
               <p class="m-0">
-                APR: {{pool.aprOld}}% -> {{pool.aprNew}}% <label v-if="(
+                APR: {{pool.aprOld}}% -> {{pool.aprNew}}%
+                <span style="color: green" v-if="pool.stakingAPR"> +{{pool.stakingAPR}}% ({{pool.stakingRewardAsset}})</span>
+                <label v-if="(
                     (
                         data.cumulativeValuesByAsset[pool.asset] && data.cumulativeValuesByAsset[pool.asset].newUserSupplied > 0) ||
                         (data.idleBalancesByAsset[pool.asset] && data.idleBalancesByAsset[pool.asset].amount > 0)
-                    ) && pool.aprNew > data.cumulativeValuesByAsset[pool.asset].maxAPR">🔥</label>
+                    ) && (pool.aprNew + pool.stakingAPR) > data.cumulativeValuesByAsset[pool.asset].maxAPR">🔥</label>
               </p>
               <p class="m-0">
                 Utilization: {{pool.utilization}}% / {{pool.kink}}%

@@ -14,6 +14,7 @@ export enum ASSETS {
   wstETH = 'wstETH',
   OP = 'OP',
   IBEX = 'IBEX',
+  OX = 'OX',
 }
 
 export const assetConf = {
@@ -23,6 +24,7 @@ export const assetConf = {
   [ASSETS.wstETH]: { tokenId: 'wrapped-steth' },
   [ASSETS.OP]: { tokenId: 'optimism' },
   [ASSETS.IBEX]: { tokenId: 'impermax-2' },
+  [ASSETS.OX]: { tokenId: 'ox-fun' },
 }
 export const assetByTokenId = Object.assign(
   {},
@@ -35,6 +37,7 @@ export const CHAIN_CONF: {
   [key in Chains]: {
     rpcUrls: string[]
     borrowables: string[]
+    staking: { [b: string]: { pool: string, rewardToken: string } }
     chainId: number
     assets: { [addr: string]: ASSETS }
   }
@@ -52,13 +55,25 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0xe43872854ce04be138a81a383901c8d6f55c5b20'),
       web3Inst.utils.toChecksumAddress('0x897cf921b95e493fca1fe007573b89a98974c45b'),
       web3Inst.utils.toChecksumAddress('0x6b3e5a7e2774c5158d619aa28845d64d90a3926c'),
+      web3Inst.utils.toChecksumAddress('0xa9B5d4bF5E8cBC168B55f92688ECA66E098fB5Fa'),
+      web3Inst.utils.toChecksumAddress('0x2edd0e2249179336b09b8bb69118d29326ec5409'),
+      web3Inst.utils.toChecksumAddress('0x0c8c948ED09B92A9fC489CeCe85Cc7E1E22D964F'),
+      web3Inst.utils.toChecksumAddress('0xe70B375f76f32c489fb72D630e73Ebc738CEE73a'),
+      web3Inst.utils.toChecksumAddress('0x74705C3C2E01891044f8654445DcCf6e28b51758'),
     ],
+    staking: {
+      '0x74705C3C2E01891044f8654445DcCf6e28b51758': {
+        pool: '0x5044792F7880Ce29B4B2cd4CD0c54DF60dfafbDB',
+        rewardToken: '0xba0Dda8762C24dA9487f5FA026a9B64b695A07Ea',
+      },
+    },
     rpcUrls: ['https://mainnet.base.org', 'https://1rpc.io/base', 'https://base.meowrpc.com'],
     chainId: 8453,
     assets: {
       '0x4200000000000000000000000000000000000006': ASSETS.ETH,
       '0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452': ASSETS.wstETH,
       '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913': ASSETS.USDC,
+      '0xba0Dda8762C24dA9487f5FA026a9B64b695A07Ea': ASSETS.OX,
     },
   },
   [Chains.OP]: {
@@ -73,6 +88,7 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0x388a16D05b5eB4BB4c6D6f841544c6138219dF53'),
       web3Inst.utils.toChecksumAddress('0x261a84Bb62A1d10006711746dd8a5cB7eDc3F41d'),
     ],
+    staking: {},
     rpcUrls: ['https://mainnet.optimism.io', 'https://1rpc.io/op'],
     chainId: 10,
     assets: {
@@ -86,7 +102,7 @@ export const CHAIN_CONF: {
   [Chains.SCROLL]: {
     borrowables: [
       web3Inst.utils.toChecksumAddress('0x261c172cba86b745c46060f856a64bd2dd9d2fd0'),
-      // web3Inst.utils.toChecksumAddress('0x56F98d1f75a6345312bf46FDb48aB4728Ff25aDf'), // toxic
+      // web3Inst.utils.toChecksumAddress('0x56F98d1f75a6345312bf46FDb48aB4728Ff25aDf'), // TKN/USDC toxic
       web3Inst.utils.toChecksumAddress('0x5fcB13b257bFB6A4Fdd4A263CBbfcF487FAd6aa3'),
       web3Inst.utils.toChecksumAddress('0x48305bF15D7002b07f94F52265bdFee36cAA84EA'),
       web3Inst.utils.toChecksumAddress('0x6bb698fcfec8BC3cfF098Fef50e48A3712cb5F2B'),
@@ -94,10 +110,11 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0x79e7674413855e01690cc7e078d64a71c1cf44c6'),
       web3Inst.utils.toChecksumAddress('0x8509212569bbAcFD254753257Ed6f01010B96D6b'),
       web3Inst.utils.toChecksumAddress('0xf92Fe79d269C3C315973dFcda7D748B1e506991B'),
-      web3Inst.utils.toChecksumAddress('0x382B611B67169Da69D5073746b4EF94cd45Ef620'),
+      // web3Inst.utils.toChecksumAddress('0x382B611B67169Da69D5073746b4EF94cd45Ef620'), // USDC/CHI toxic
       web3Inst.utils.toChecksumAddress('0x38581cD06888569e157ae68d8DF64bD4f48B9eb1'),
       web3Inst.utils.toChecksumAddress('0xD620aDF0B665De2604acC976fD962E4C33dAb398'),
     ],
+    staking: {},
     rpcUrls: ['https://rpc.scroll.io', 'https://1rpc.io/scroll', 'https://rpc.ankr.com/scroll', ],
     chainId: 534352,
     assets: {
@@ -122,6 +139,7 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0x7a3c737368d9ab8f00e19fe58cdad7aed586cd49'),
       web3Inst.utils.toChecksumAddress('0xab0de337fe170bb8c8d88664641402b1da410cd7'),
     ],
+    staking: {},
     rpcUrls: ['https://fantom-json-rpc.stakely.io', 'https://fantom-mainnet.public.blastapi.io', 'https://endpoints.omniatech.io/v1/fantom/mainnet/public', 'https://fantom.drpc.org', 'https://1rpc.io/ftm', 'https://rpc.ftm.tools', 'https://rpc.fantom.network', 'https://rpc.ankr.com/fantom', 'https://rpcapi.fantom.network', 'https://rpc2.fantom.network'],
     chainId: 250,
     assets: {
