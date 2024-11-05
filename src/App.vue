@@ -5,7 +5,7 @@ import Image from 'primevue/image';
 
 <template>
   <Terminal msg="Impermax lending terminal" />
-  <footer>
+  <footer style="text-align: center">
     <a href="https://github.com/chainpioneer/impermax-lending-terminal"  target="_blank" rel="noopener">
     <Image src='https://cdn-icons-png.flaticon.com/512/25/25231.png' alt='Github' width="30px"/>
   </a>

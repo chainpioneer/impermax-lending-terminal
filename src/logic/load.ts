@@ -37,7 +37,7 @@ export type Deposit = {
   usd: number
 }
 
-type Pool = {
+export type Pool = {
   borrowable: string
   platform: string
   supplied: number

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref} from 'vue'
-import load, {Deposit} from "../logic/load";
+import load, {Deposit, Pool} from "../logic/load";
 import {isAddress} from "web3-validator";
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
@@ -10,6 +10,7 @@ import ProgressSpinner from 'primevue/progressspinner';
 import Popover from 'primevue/popover';
 import Panel from 'primevue/panel';
 import {ASSETS, Chains} from "../constants/constants";
+import ToggleSwitch from 'primevue/toggleswitch';
 
 defineProps<{ msg: string }>()
 
@@ -38,6 +39,8 @@ const suppliedByChainByBorrowableByUser = ref<{ [chain: string]: { [borrowable: 
 
 const selectedChains = ref<{ [chain: string]: boolean }>({});
 const selectedAssets = ref<{ [asset: string]: boolean }>({});
+
+const onlyMyDeposits = ref(false);
 
 const showIdleByUser = (event: any) => {
   idleByUser.value.toggle(event);
@@ -214,6 +217,18 @@ function linkToPool(pool: { vault: string, platform: string, chain: Chains, stab
   return `https://${chainPrefix}.impermax.finance/lending-pool/${pool.stable ? '7' : '6'}/${pool.vault.toLowerCase()}`
 }
 
+function linkToExplorer(pool: Pool) {
+  let chainPrefix
+  switch (pool.chain) {
+    case Chains.BASE: chainPrefix = 'basescan.org'; break
+    case Chains.SCROLL: chainPrefix = 'scrollscan.com'; break
+    case Chains.OP: chainPrefix = 'optimistic.etherscan.io'; break
+    case Chains.FTM: chainPrefix = 'ftmscan.com'; break
+    default: throw new Error(`unknown chain ${pool.chain}`)
+  }
+  return `https://${chainPrefix}/address/${pool.borrowable}`
+}
+
 function extractAddresses(str: string): string[] {
   return str.split(",").map(s => s.replace(" ", ''))
 }
@@ -256,18 +271,16 @@ function toUSDCurrency(n: number | string): string {
 
 <template>
   <h1>{{ msg }}</h1>
-
-
   <Card>
     <template #content>
-      <InputText v-model="addresses" placeholder="input addresses" size="large"/>
+      <InputText v-model="addresses" style="width: 97%" placeholder="input addresses" size="large"/>
     </template>
     <template #footer>
       <div>
-        <template v-if="fetchingData">
+        <div v-if="fetchingData" style="text-align: center">
           <ProgressSpinner style="width: 50px; height: 50px" strokeWidth="8" fill="transparent"
                            animationDuration=".5s" aria-label="Custom ProgressSpinner" />
-        </template>
+        </div>
         <template v-else>
           <Button label="fetch data" class="w-full" :disabled='invalidAddresses(addresses) || fetchingData' @click="( async() => {
             fetchingData = true
@@ -491,9 +504,14 @@ function toUSDCurrency(n: number | string): string {
   </Panel>
 
   <Card class="card-block">
-    <template #title>Pools</template>
     <template #subtitle v-if="data">
-        <div style="display: flex; align-items: center; justify-content: space-between">
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap">
+          <div style="text-align: left">
+            <div style="margin-bottom: 5px; text-align: left">
+              <label>My deposits</label>
+            </div>
+            <ToggleSwitch v-model="onlyMyDeposits" />
+          </div>
           <div>
             <div style="margin-bottom: 5px; text-align: left">
               <label>Select chains</label>
@@ -523,9 +541,11 @@ function toUSDCurrency(n: number | string): string {
     <template #content>
       <div class="asset-summarized-info">
         <template v-if="data" v-for="pool in data.goodPools">
-          <Card class="card-chain" v-if="selectedChains[pool.chain] && selectedAssets[pool.asset]">
+          <Card class="card-pool" v-if="selectedChains[pool.chain] && selectedAssets[pool.asset] && (!onlyMyDeposits || pool.suppliedBN > 0)">
             <template #title>Collateral: {{pool.asset}}/{{pool.oppositeSymbol}} ({{pool.vaultAPR}}%)</template>
-            <template #subtitle>{{pool.borrowable}}</template>
+            <template #subtitle>
+              <a target="_blank" rel="noopener" :href="linkToExplorer(pool)" style="font-family: monospace">{{pool.borrowable}}</a>
+            </template>
             <template #content>
               <p class="m-0">
                 Supplied: {{pool.supplied}} ({{toUSDCurrency(pool.suppliedUsd)}})
@@ -561,7 +581,7 @@ function toUSDCurrency(n: number | string): string {
               <p class="m-0">
                 Capacity: {{pool.availableToDeposit}} ({{toUSDCurrency(pool.availableToDepositUsd)}})
                 <label
-                  v-if="pool.availableToDepositUsd > 10"
+                  v-if="pool.availableToDepositUsd > 1_000"
                 >👀</label>
                 <label
                     style="cursor: pointer"
@@ -651,23 +671,30 @@ function toUSDCurrency(n: number | string): string {
 
 .toggleable-area {
   margin: 1rem;
+  min-width: 570px;
 }
 
 .card-block {
   margin: 1rem;
-  display: flex;
   flex-wrap: wrap;
+  min-width: 570px;
 }
 
 .asset-summarized-info {
   margin: 1rem;
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .card-chain {
   flex: 0 1 max(32%, 300px);
   margin: 5px;
+}
+
+.card-pool {
+  margin: 5px;
+  width: 365px;
 }
 
 .card-asset {
