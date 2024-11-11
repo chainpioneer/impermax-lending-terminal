@@ -5,7 +5,7 @@ An advanced position management terminal for Impermax-like pools
 Features: 
 - Shows current and virtual (that can be applied onchain) APR of pools
 - Allows users to `sync` interest rates. The button becomes active when your daily earnings delta of the pool reaches 1$.
-- Shows combined data across multiple chains. SCROLL, OP, BASE and FTM (with USDC, ETH, wstETH, OP, FTM and IBEX pools) are supported.
+- Shows combined data across multiple chains. SCROLL, OP, BASE, FTM and re.al (with USDC, ETH, wstETH, OP, FTM and IBEX pools) are supported.
 - The app has no own backend and RPC requests are highly optimized. It's only 5 calls per chain to fetch all onchain data.
 - Coingecko API is used to fetch assets prices.
 - Current list of supported borrowables: [constants.ts](src/constants/constants.ts).
