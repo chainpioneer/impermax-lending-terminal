@@ -60,6 +60,7 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0x0c8c948ED09B92A9fC489CeCe85Cc7E1E22D964F'),
       web3Inst.utils.toChecksumAddress('0xe70B375f76f32c489fb72D630e73Ebc738CEE73a'),
       web3Inst.utils.toChecksumAddress('0x74705C3C2E01891044f8654445DcCf6e28b51758'),
+      web3Inst.utils.toChecksumAddress('0x3c3Bd349bBB59D588FAC1CE00CA64878Ee54eA5e'),
     ],
     staking: {
       '0x74705C3C2E01891044f8654445DcCf6e28b51758': {
