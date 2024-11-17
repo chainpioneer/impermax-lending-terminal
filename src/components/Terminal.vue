@@ -145,7 +145,6 @@ const chainIdByChain = {
   [Chains.OP]: '0xa',
   [Chains.FTM]: '0xfa',
   [Chains.BASE]: '0x2105',
-  [Chains.REAL]: '0x1b254',
 }
 
 const ethereum = () => (window as any).ethereum
@@ -154,8 +153,6 @@ function chainImgSrc(ch: number | string) {
   switch (ch) {
     case Chains.FTM:
       return 'https://cryptologos.cc/logos/fantom-ftm-logo.png'
-    case Chains.REAL:
-      return 'https://img.cryptorank.io/coins/re_al1711025448575.png'
     case Chains.BASE:
       return 'https://avatars.githubusercontent.com/u/108554348?v=4'
     case Chains.OP:
@@ -205,7 +202,6 @@ function linkToPool(pool: { vault: string, platform: string, chain: Chains, stab
       case Chains.SCROLL: chainId = '534352'; break
       case Chains.OP: chainId = '10'; break
       case Chains.FTM: chainId = '250'; break
-      case Chains.REAL: chainId = '111188'; break
       default: throw new Error(`unknown chain ${pool.chain}`)
     }
     return `https://tarot.to/lending-pool/${chainId}/${pool.vault.toLowerCase()}`
@@ -216,7 +212,6 @@ function linkToPool(pool: { vault: string, platform: string, chain: Chains, stab
     case Chains.SCROLL: chainPrefix = 'scroll'; break
     case Chains.OP: chainPrefix = 'optimism'; break
     case Chains.FTM: chainPrefix = 'fantom'; break
-    case Chains.REAL: chainPrefix = 'real'; break
     default: throw new Error(`unknown chain ${pool.chain}`)
   }
   return `https://${chainPrefix}.impermax.finance/lending-pool/${pool.stable ? '7' : '6'}/${pool.vault.toLowerCase()}`
@@ -229,7 +224,6 @@ function linkToExplorer(pool: Pool) {
     case Chains.SCROLL: chainPrefix = 'scrollscan.com'; break
     case Chains.OP: chainPrefix = 'optimistic.etherscan.io'; break
     case Chains.FTM: chainPrefix = 'ftmscan.com'; break
-    case Chains.REAL: chainPrefix = 'explorer.re.al'; break
     default: throw new Error(`unknown chain ${pool.chain}`)
   }
   return `https://${chainPrefix}/address/${pool.borrowable}`

@@ -5,7 +5,6 @@ export enum Chains {
   OP = 'OP',
   SCROLL = 'SCROLL',
   FTM = 'FTM',
-  REAL = 'REAL',
 }
 
 export enum ASSETS {
@@ -145,18 +144,6 @@ export const CHAIN_CONF: {
     chainId: 250,
     assets: {
       '0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83': ASSETS.FTM,
-    },
-  },
-  [Chains.REAL]: {
-    borrowables: [
-      web3Inst.utils.toChecksumAddress('0x78461C9A773d0343B91FEEe6fa98f41a31Adbfb5'),
-      web3Inst.utils.toChecksumAddress('0xB940A3b782fb4b3865aa133bc42991ae45066276'),
-    ],
-    staking: {},
-    rpcUrls: ['https://tangible-real.gateway.tenderly.co', 'https://real.drpc.org', 'https://rpc.realforreal.gelato.digital'],
-    chainId: 111188,
-    assets: {
-      '0xc518A88c67CECA8B3f24c4562CB71deeB2AF86B7': ASSETS.USDC,
     },
   },
 }
