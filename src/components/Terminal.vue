@@ -178,6 +178,10 @@ function assetImgSrc(asset: number | string) {
       return 'https://cryptologos.cc/logos/steth-steth-logo.png'
     case ASSETS.USDC:
       return 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png'
+    case ASSETS.cbBTC:
+      return 'https://s2.coinmarketcap.com/static/img/coins/200x200/32731.png'
+    case ASSETS.AERO:
+      return 'https://s2.coinmarketcap.com/static/img/coins/200x200/29270.png'
     case ASSETS.ETH:
       return 'https://seeklogo.com/images/E/ethereum-logo-EC6CDBA45B-seeklogo.com.png'
     default:

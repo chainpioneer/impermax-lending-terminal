@@ -12,9 +12,22 @@ export enum ASSETS {
   ETH = 'ETH',
   FTM = 'FTM',
   wstETH = 'wstETH',
+  cbBTC = 'cbBTC',
+  AERO = 'AERO',
   OP = 'OP',
   IBEX = 'IBEX',
   OX = 'OX',
+}
+
+export function getDiv(asset: ASSETS) {
+  switch (asset) {
+    case ASSETS.USDC:
+      return 10 ** 6
+    case ASSETS.cbBTC:
+      return 10 ** 8
+    default:
+      return 10 ** 18
+  }
 }
 
 export const assetConf = {
@@ -22,9 +35,11 @@ export const assetConf = {
   [ASSETS.ETH]: { tokenId: 'weth' },
   [ASSETS.FTM]: { tokenId: 'wrapped-fantom' },
   [ASSETS.wstETH]: { tokenId: 'wrapped-steth' },
+  [ASSETS.cbBTC]: { tokenId: 'coinbase-wrapped-btc' },
   [ASSETS.OP]: { tokenId: 'optimism' },
   [ASSETS.IBEX]: { tokenId: 'impermax-2' },
   [ASSETS.OX]: { tokenId: 'ox-fun' },
+  [ASSETS.AERO]: { tokenId: 'aerodrome-finance' },
 }
 export const assetByTokenId = Object.assign(
   {},
@@ -40,6 +55,7 @@ export const CHAIN_CONF: {
     staking: { [b: string]: { pool: string, rewardToken: string } }
     chainId: number
     assets: { [addr: string]: ASSETS }
+    aaveLendingPool: string
   }
 } = {
   [Chains.BASE]: {
@@ -61,7 +77,16 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0xe70B375f76f32c489fb72D630e73Ebc738CEE73a'),
       web3Inst.utils.toChecksumAddress('0x74705C3C2E01891044f8654445DcCf6e28b51758'),
       web3Inst.utils.toChecksumAddress('0x3c3Bd349bBB59D588FAC1CE00CA64878Ee54eA5e'),
+      web3Inst.utils.toChecksumAddress('0x9f1c0Bad87dcDBC85C7F8C036DF646001AFC31B8'),
+      web3Inst.utils.toChecksumAddress('0x1d63c27367dd5a8c86b59934645df46d5486240f'),
+      web3Inst.utils.toChecksumAddress('0x51f51ccf2f17afec75f79d2a4fb0ac289dcc385b'),
+      web3Inst.utils.toChecksumAddress('0x08383d1f85e1c5f6f1b08f005fb48c93a41ca2c7'),
+      web3Inst.utils.toChecksumAddress('0x4d12d8a31cabb91d5354c657531ab967b5bea835'),
+      web3Inst.utils.toChecksumAddress('0xdDE57a17342Bb77c730d09733F20Ad4358636d08'),
+      web3Inst.utils.toChecksumAddress('0xe865782fE813de288c2B041B49029dE7722a999F'),
+      web3Inst.utils.toChecksumAddress('0x31C7df9a030ea659140a005f7c88a07860136B87'),
     ],
+    aaveLendingPool: '0xA238Dd80C259a72e81d7e4664a9801593F98d1c5',
     staking: {
       '0x74705C3C2E01891044f8654445DcCf6e28b51758': {
         pool: '0x5044792F7880Ce29B4B2cd4CD0c54DF60dfafbDB',
@@ -75,6 +100,8 @@ export const CHAIN_CONF: {
       '0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452': ASSETS.wstETH,
       '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913': ASSETS.USDC,
       '0xba0Dda8762C24dA9487f5FA026a9B64b695A07Ea': ASSETS.OX,
+      '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf': ASSETS.cbBTC,
+      '0x940181a94A35A4569E4529A3CDfB74e38FD98631': ASSETS.AERO,
     },
   },
   [Chains.OP]: {
@@ -90,6 +117,7 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0x261a84Bb62A1d10006711746dd8a5cB7eDc3F41d'),
     ],
     staking: {},
+    aaveLendingPool: '',
     rpcUrls: ['https://mainnet.optimism.io', 'https://1rpc.io/op'],
     chainId: 10,
     assets: {
@@ -116,6 +144,7 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0xD620aDF0B665De2604acC976fD962E4C33dAb398'),
     ],
     staking: {},
+    aaveLendingPool: '',
     rpcUrls: ['https://rpc.scroll.io', 'https://1rpc.io/scroll', 'https://rpc.ankr.com/scroll', ],
     chainId: 534352,
     assets: {
@@ -141,6 +170,7 @@ export const CHAIN_CONF: {
       web3Inst.utils.toChecksumAddress('0xab0de337fe170bb8c8d88664641402b1da410cd7'),
     ],
     staking: {},
+    aaveLendingPool: '',
     rpcUrls: ['https://fantom-json-rpc.stakely.io', 'https://fantom-mainnet.public.blastapi.io', 'https://endpoints.omniatech.io/v1/fantom/mainnet/public', 'https://fantom.drpc.org', 'https://1rpc.io/ftm', 'https://rpc.ftm.tools', 'https://rpc.fantom.network', 'https://rpc.ankr.com/fantom', 'https://rpcapi.fantom.network', 'https://rpc2.fantom.network'],
     chainId: 250,
     assets: {

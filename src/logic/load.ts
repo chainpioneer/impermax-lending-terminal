@@ -4,7 +4,7 @@ import borrowableAbi from '../../abi/borrowable.json' assert {type: 'json'}
 import stakingPoolAbi from '../../abi/stakingPool.json' assert {type: 'json'}
 import vaultAbi from '../../abi/vault.json' assert {type: 'json'}
 import collateralAbi from '../../abi/collateral.json' assert {type: 'json'}
-import {ASSETS, CHAIN_CONF, Chains} from '../constants/constants'
+import {ASSETS, CHAIN_CONF, Chains, getDiv} from '../constants/constants'
 import {callWithTimeout, getCurrentEthCallProvider, tryWithTimeout, web3EthCall} from '../provider/provider'
 import ONE from '../utils/ONE'
 import {getAssetPrice, waitForPrices} from "./assetPrices";
@@ -233,7 +233,7 @@ export default async function load(users: string[]) {
         throw new Error(`${chain} unknown underlying ${Object.keys(underlyings)[i - 1]}`)
       }
       const asset = i === 0 ? (chain === Chains.FTM ? ASSETS.FTM : ASSETS.ETH) : conf.assets[Object.keys(underlyings)[i - 1]]
-      const div = asset === ASSETS.USDC ? 10 ** 6 : 10 ** 18
+      const div = getDiv(asset)
       let j = 0
       for (const user of users) {
         const bn = idleBalances[i * users.length + j]
@@ -327,7 +327,7 @@ export default async function load(users: string[]) {
       }
 
       const asset = conf.assets[underlying]
-      const div = asset === ASSETS.USDC ? 10 ** 6 : 10 ** 18
+      const div = getDiv(asset)
       
       let balance: bigint = 0n
       let stakedBalance: bigint = 0n
@@ -555,7 +555,7 @@ export default async function load(users: string[]) {
 
   for (const c in Chains) {
     for (const a in ASSETS) {
-      const div = a === ASSETS.USDC ? 10 ** 6 : 10 ** 18
+      const div = getDiv(a as ASSETS)
       const aca = cumulativeValuesByChains[c][a]
       if (aca) {
         aca.currentAPR = aca.newUserSupplied === 0 ? 0 : Number((aca.oldDailyEarnings * 36500 / aca.newUserSupplied).toFixed(2))
@@ -609,7 +609,7 @@ export default async function load(users: string[]) {
   let maxTotalEarnings = 0
   for (const a in ASSETS) {
     const price = getAssetPrice(a as ASSETS)
-    const div = a === ASSETS.USDC ? 10 ** 6 : 10 ** 18
+    const div = getDiv(a as ASSETS)
     const ca = cumulativeValuesByAsset[a]
     if (cumulativeValuesByAsset[a]) {
       const [depUsd, oldEarnings, newEarinings, maxEarnings] = formatStats(ca, price, div)
